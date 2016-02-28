@@ -20,15 +20,20 @@ import org.apache.http.message.BasicStatusLine;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -60,32 +65,22 @@ public class OkHttpStack implements HttpStack {
         int timeoutMs = request.getTimeoutMs();
         int retryCount = request.getRetryPolicy().getCurrentRetryCount();
         boolean isRetry = (retryCount > 0) ? true : false;
+        //TODO  raw中的keyStore文件名 Context传入
+        InputStream inputStream = new Activity().getResources().openRawResource(0);
+        SSLContext sslContext = sslContextForTrustedCertificates(inputStream);
+
         OkHttpClient client = null;
-        try {
-            client = new OkHttpClient.Builder()
-                    .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .sslSocketFactory(createSSLSocketFactory(new Activity(),123, "123@eascs.com"))
-                    .retryOnConnectionFailure(isRetry)
-                    .build();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        }
+        client = new OkHttpClient.Builder()
+                .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .sslSocketFactory(sslContext.getSocketFactory())
+                .retryOnConnectionFailure(isRetry)
+                .build();
+
 
         okhttp3.Request.Builder okHttpRequestBuilder = new okhttp3.Request.Builder();
         URL parsedUrl = new URL(request.getUrl());
-        String protocol = parsedUrl.getProtocol();
-//        if ("https".equals(protocol)) {
-//            HTTPSTrustManager.allowAllSSL();
-//
-//        }
 
         Map<String, String> headers = request.getHeaders();
 
@@ -218,19 +213,62 @@ public class OkHttpStack implements HttpStack {
     }
 
 
-    private SSLSocketFactory createSSLSocketFactory(Context context, int res, String password)
-            throws CertificateException,
-            NoSuchAlgorithmException,
-            IOException,
-            KeyStoreException,
-            KeyManagementException {
-        InputStream inputStream = context.getResources().openRawResource(res);
-        KeyStore keyStore = KeyStore.getInstance("BKS");
-        keyStore.load(inputStream, password.toCharArray());
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(keyStore);
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
-        return sslContext.getSocketFactory();
+//    private SSLSocketFactory createSSLSocketFactory(Context context, int res, String password)
+//            throws CertificateException,
+//            NoSuchAlgorithmException,
+//            IOException,
+//            KeyStoreException,
+//            KeyManagementException {
+//        InputStream inputStream = context.getResources().openRawResource(res);
+//        KeyStore keyStore = KeyStore.getInstance("BKS");
+//        keyStore.load(inputStream, password.toCharArray());
+//        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+//        tmf.init(keyStore);
+//        SSLContext sslContext = SSLContext.getInstance("TLS");
+//        sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
+//        return sslContext.getSocketFactory();
+//    }
+
+    public SSLContext sslContextForTrustedCertificates(InputStream in) {
+        try {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Collection<? extends Certificate> certificates = certificateFactory.generateCertificates(in);
+            if (certificates.isEmpty()) {
+                throw new IllegalArgumentException("expected non-empty set of trusted certificates");
+            }
+
+
+            char[] password = "123@eascs.com".toCharArray();
+            KeyStore keyStore = newEmptyKeyStore(password);
+            int index = 0;
+            for (Certificate certificate : certificates) {
+                String certificateAlias = Integer.toString(index++);
+                keyStore.setCertificateEntry(certificateAlias, certificate);
+            }
+
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, password);
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+                    TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keyStore);
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(),
+                    new SecureRandom());
+            return sslContext;
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private KeyStore newEmptyKeyStore(char[] password) throws GeneralSecurityException {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            InputStream in = null;
+            keyStore.load(in, password);
+            return keyStore;
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 }
