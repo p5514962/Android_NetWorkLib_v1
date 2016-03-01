@@ -3,11 +3,9 @@ package com.eascs.app.volleylib.http;
 
 import android.app.Activity;
 import android.content.Context;
-
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.toolbox.HttpStack;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
@@ -16,7 +14,6 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,11 +25,9 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-
 import okhttp3.Call;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -66,7 +61,7 @@ public class OkHttpStack implements HttpStack {
                     .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                     .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .sslSocketFactory(createSSLSocketFactory(new Activity(),123, "123@eascs.com"))
+                    .sslSocketFactory(createSSLSocketFactory(new Activity(),123, "123@eascs.com"))//暂时无用代码
                     .retryOnConnectionFailure(isRetry)
                     .build();
         } catch (CertificateException e) {

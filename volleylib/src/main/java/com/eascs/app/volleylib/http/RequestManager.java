@@ -7,23 +7,52 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
 /**
- * Created by leo on 2015/7/31.
+ * Created by KevinHo on 2016/2/29.
  */
 public class RequestManager {
 
-    private static RequestQueue mRequestQueue;
+    private RequestQueue mRequestQueue;
+    private static RequestManager instance;
 
-    private RequestManager() {
+    private RequestManager() {//
         // no instances
     }
 
-    public static RequestManager init(Context context) {
+    private RequestManager(Context context) {//私有构造函数只提供内部使用
         mRequestQueue = Volley.newRequestQueue(context);
-
-        return null;
     }
 
-    public static RequestQueue getRequestQueue() {
+    /**
+     * 对外app 启动初始化方法
+     * @param context 上下文
+     * @return
+     */
+    public static RequestManager init(Context context) {
+        if (context != null) {
+            if (instance == null) {
+                instance = new RequestManager(context);
+            } else {
+                throw new IllegalArgumentException("Context must be set");
+            }
+        }
+        return instance;
+
+    }
+
+    /**
+     * 对外RequestManager 实例
+     * @return RequestManager
+     */
+    public static RequestManager getInstance() {
+        return instance;
+    }
+
+
+    /**
+     * 获取请求队列实例
+     * @return 返回请求队列实例
+     */
+    public RequestQueue getRequestQueue() {
         if (mRequestQueue != null) {
             return mRequestQueue;
         } else {
@@ -31,7 +60,7 @@ public class RequestManager {
         }
     }
 
-    public static void addRequest(Request<?> request, Object tag) {
+    public void addRequest(Request<?> request, Object tag) {
         if (tag != null) {
             request.setTag(tag);
         }
@@ -43,7 +72,7 @@ public class RequestManager {
      *
      * @param tag
      */
-    public static void cancel(Object tag) {
+    public void cancel(Object tag) {
         if (mRequestQueue != null) {
             mRequestQueue.cancelAll(tag);
         }
@@ -59,9 +88,8 @@ public class RequestManager {
 //            mRequestQueue.cancelAll(tag,onRequestCancelListener);
 //        }
 //    }
-
     public static void cancelAll(final Object tag) {
-        if(tag == null) {
+        if (tag == null) {
             throw new IllegalArgumentException("Cannot cancelAll with a null tag");
         } else {
             cancelAll(new RequestQueue.RequestFilter() {
@@ -77,13 +105,13 @@ public class RequestManager {
      *
      * @param ctx
      */
-    public static void cancelAll(Context ctx) {
+    public void cancelAll(Context ctx) {
         if (mRequestQueue != null) {
             mRequestQueue.cancelAll(ctx);
         }
     }
 
-    public static void cancel() {
+    public void cancel() {
         if (mRequestQueue != null) {
             mRequestQueue.cancelAll(new RequestQueue.RequestFilter() {
 
@@ -95,12 +123,7 @@ public class RequestManager {
         }
     }
 
-
-
-
-
-
-    public static void clear(Object tag) {
+    public void clear(Object tag) {
         if (mRequestQueue != null) {
             mRequestQueue.cancelAll(tag);
         }

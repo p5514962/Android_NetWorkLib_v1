@@ -1,4 +1,4 @@
-package com.eascs.app.volleylib;
+package com.eascs.app.volleylib.model;
 
 /**
  * @author KevinHo
@@ -8,5 +8,5 @@ package com.eascs.app.volleylib;
  * @email 20497342@qq.com
  * @date
  */
-public class Test {
+public class RequestInfo {
 }
