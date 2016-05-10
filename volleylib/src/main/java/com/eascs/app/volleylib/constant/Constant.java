@@ -2,13 +2,12 @@ package com.eascs.app.volleylib.constant;
 
 import com.android.volley.DefaultRetryPolicy;
 
-/**
- * @author KevinHo
+/***
  * @version V1.0
- * @ClassName:
- * @Description:
- * @email 20497342@qq.com
- * @date
+ * @author KevinHo
+ * @desc 网络框架常量
+ * @time 2016/5/10 0010 15:47
+ * @reference
  */
 public class Constant {
 
@@ -20,7 +19,7 @@ public class Constant {
     }
 
     /**
-     *
+     * 头部
      */
     public static final class Header{
         public static final String STATE = "state";
@@ -30,6 +29,9 @@ public class Constant {
 
     }
 
+    /**
+     *
+     */
     public static final class Response{
         public static final String DATA = "data";
     }

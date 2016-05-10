@@ -1,6 +1,7 @@
 package com.eascs.app.volleylib.impl;
 
 import android.text.TextUtils;
+
 import com.android.volley.ParseError;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -13,8 +14,10 @@ import com.eascs.app.volleylib.http.HttpRequestModel;
 import com.eascs.app.volleylib.interfaces.filter.ResponseFilter;
 import com.eascs.app.volleylib.model.ResponseInfo;
 import com.eascs.app.volleylib.model.action.RequestAction;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.util.Arrays;
 
 /**
@@ -35,7 +38,7 @@ public class ResponseListener implements Response.Listener<JSONObject> {
     private NetWorkApiControlCenter mNetWorkApiControlCenter;
     private RequestAction requestAction;
 
-    public ResponseListener(int requestCode, HttpRequestModel httpRequestModel, HttpConnectionCallBack httpConnectionCallBack,RequestAction requestAction) {
+    public ResponseListener(int requestCode, HttpRequestModel httpRequestModel, HttpConnectionCallBack httpConnectionCallBack, RequestAction requestAction) {
         this.requestCode = requestCode;
         this.httpRequestModel = httpRequestModel;
         this.requestAction = requestAction;
@@ -73,7 +76,7 @@ public class ResponseListener implements Response.Listener<JSONObject> {
             for (int i = 0; i < responseFilters.length; i++) {
                 ResponseFilter mResponseFilter = responseFilters[i];
                 if (null != mResponseFilter && !mResponseFilter.onFilter(responseInfo)) {
-                    if (null != filterAction && Arrays.asList(filterAction).contains(mResponseFilter.uniqueKey())) {
+                    if (null != filterAction && Arrays.asList(filterAction.getResponseFilter()).contains(mResponseFilter.uniqueKey())) {
                         buildSuccessCase(headerModel, jsonObject);//回调具体页面,携带感兴趣数据
                         return;
                     } else return;
