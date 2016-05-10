@@ -12,7 +12,8 @@ import com.android.volley.DefaultRetryPolicy;
  */
 public class ApiRetryPolicy extends DefaultRetryPolicy {
 
-    public ApiRetryPolicy(){
+    public ApiRetryPolicy(){//默认关闭重试机制
+        super(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, /*DefaultRetryPolicy.DEFAULT_MAX_RETRIES*/0, 0/*DefaultRetryPolicy.DEFAULT_BACKOFF_MULT*/);
     }
 
     public ApiRetryPolicy(int timeoutMs,int retriesMax,float mBackoffMultiplier){

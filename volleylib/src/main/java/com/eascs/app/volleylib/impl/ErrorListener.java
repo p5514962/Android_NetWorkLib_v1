@@ -2,8 +2,9 @@ package com.eascs.app.volleylib.impl;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.eascs.app.volleylib.http.HttpConnectionCallBack;
+import com.eascs.app.volleylib.interfaces.HttpConnectionCallBack;
 import com.eascs.app.volleylib.http.HttpRequestModel;
+import com.eascs.app.volleylib.model.action.RequestAction;
 
 /**
  * @author KevinHo
@@ -15,18 +16,20 @@ import com.eascs.app.volleylib.http.HttpRequestModel;
  */
 public class ErrorListener implements Response.ErrorListener {
 
-    HttpRequestModel httpRequestModel;
+    private HttpRequestModel httpRequestModel;
+    private RequestAction requestAction;
     HttpConnectionCallBack httpConnectionCallBack;
 
     public ErrorListener(HttpRequestModel httpRequestModel,
-                         HttpConnectionCallBack httpConnectionCallBack) {
+                         HttpConnectionCallBack httpConnectionCallBack,RequestAction requestAction) {
         this.httpConnectionCallBack = httpConnectionCallBack;
         this.httpRequestModel = httpRequestModel;
+        this.requestAction = requestAction;
     }
 
     @Override
     public void onErrorResponse(VolleyError volleyError) {
-        if (httpConnectionCallBack != null) {
+        if (httpConnectionCallBack != null && !requestAction.isCancel()) {
             httpConnectionCallBack.onFailure(volleyError, httpRequestModel);
         }
     }
