@@ -30,7 +30,6 @@ import java.util.Arrays;
  */
 public class ResponseListener implements Response.Listener<JSONObject> {
 
-
     private int requestCode;
     private FilterAction filterAction;
     private HttpRequestModel httpRequestModel;
