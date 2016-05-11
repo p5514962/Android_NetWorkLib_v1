@@ -1,6 +1,7 @@
 package com.eascs.app.volleylib.http;
 
 import android.util.Log;
+
 import com.android.volley.Request;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.eascs.app.volleylib.control.NetWorkApiControlCenter;
@@ -17,7 +18,9 @@ import com.eascs.app.volleylib.model.action.RequestAction;
 import com.eascs.app.volleylib.model.exception.InterceptorError;
 import com.eascs.app.volleylib.model.RequestInfo;
 import com.eascs.app.volleylib.untils.LocalUntil;
+
 import org.json.JSONObject;
+
 import java.util.Map;
 
 /***
@@ -60,12 +63,12 @@ public class HttpConnection implements RequestAction.IRequestAction {
     //===============分割线======================//
 
     public RequestAction request(int requestCode, int method, String url,
-                        Map<String, String> params) {
+                                 Map<String, String> params) {
         return request(requestCode, method, url, params, Constant.REQUEST_TYPE.HTTP, Constant.ContentType.CONTENT_TYPE_FORM, null);
     }
 
     public RequestAction request(int requestCode, int method, String url,
-                        Map<String, String> params, Constant.REQUEST_TYPE protocol) {
+                                 Map<String, String> params, Constant.REQUEST_TYPE protocol) {
         return request(requestCode, method, url, params, protocol, Constant.ContentType.CONTENT_TYPE_FORM, null);
     }
 
@@ -81,7 +84,9 @@ public class HttpConnection implements RequestAction.IRequestAction {
      * @param contentType
      */
     public RequestAction request(int requestCode, int method, String url, final Map<String, String> params,
-                                     Constant.REQUEST_TYPE protocol, final String contentType, CheckerAction checkerAction) {
+                                 Constant.REQUEST_TYPE protocol, final String contentType, CheckerAction checkerAction) {
+
+        Object uniqueTag = (httpRequestModel == null || null == httpRequestModel.getRequestTag()) ? url : httpRequestModel.getRequestTag();
 
         RequestAction requestAction = new RequestAction(httpRequestModel.getRequestTag(), this);
 
@@ -106,7 +111,7 @@ public class HttpConnection implements RequestAction.IRequestAction {
         }
 
         //取消上一个相同请求
-        cancelCurrentRequest(httpRequestModel.getRequestTag());
+        cancelCurrentRequest(uniqueTag);
 
         //URL组装器
         IUrlBuilder mIUrlBuilder = netWorkApiControlCenter.getNetWorkApiBuilder().getUrlBuilder();
@@ -131,7 +136,8 @@ public class HttpConnection implements RequestAction.IRequestAction {
         request.setRetryPolicy(httpRequestModel.getRetryPolicy());
 
         //启动请求,tag 表示按照Request.setTag设置好的 tag 取消请求，比如同属于某个 Activity
-        netWorkApiControlCenter.getRequestQueueManager().addRequest(request, httpRequestModel != null ? httpRequestModel.getRequestTag() : null);
+        netWorkApiControlCenter.getRequestQueueManager().addRequest(request, uniqueTag);
+
         return requestAction;
     }
 
