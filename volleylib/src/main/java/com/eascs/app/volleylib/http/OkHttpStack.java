@@ -1,11 +1,11 @@
 package com.eascs.app.volleylib.http;
 
-
 import android.app.Activity;
-import android.content.Context;
+
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.toolbox.HttpStack;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
@@ -14,20 +14,12 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
+
 import okhttp3.Call;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -37,15 +29,22 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-/**
- * An {@link com.android.volley.toolbox.HttpStack HttpStack} implementation which
- * uses OkHttp as its transport.
- */
+
 public class OkHttpStack implements HttpStack {
     private final OkHttpClient mClient;
+    public boolean isRelease;
 
     public OkHttpStack(OkHttpClient client) {
         this.mClient = client;
+    }
+
+    public OkHttpStack(OkHttpClient mClient, boolean isRelease) {
+        this.mClient = mClient;
+        this.isRelease = isRelease;
+    }
+
+    public void setRelease(boolean release) {
+        isRelease = release;
     }
 
     @Override
@@ -54,34 +53,26 @@ public class OkHttpStack implements HttpStack {
 
         int timeoutMs = request.getTimeoutMs();
         int retryCount = request.getRetryPolicy().getCurrentRetryCount();
-        boolean isRetry = (retryCount > 0) ? true : false;
-        OkHttpClient client = null;
-        try {
-            client = new OkHttpClient.Builder()
-                    .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                    .sslSocketFactory(createSSLSocketFactory(new Activity(),123, "123@eascs.com"))//暂时无用代码
-                    .retryOnConnectionFailure(isRetry)
-                    .build();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        }
+        OkHttpClient client = mClient;
+        client = new OkHttpClient.Builder()
+                .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .sslSocketFactory(HttpsUtils.getSslSocketFactory(
+                        null,
+                        new Activity().getAssets().open("starline2.bks"),
+                        "123@eascs.com"
+                ))
+                .build();
 
         okhttp3.Request.Builder okHttpRequestBuilder = new okhttp3.Request.Builder();
         URL parsedUrl = new URL(request.getUrl());
         String protocol = parsedUrl.getProtocol();
-//        if ("https".equals(protocol)) {
-//            HTTPSTrustManager.allowAllSSL();
-//
+//        if (!isRelease) {
+//            if ("https".equals(protocol)) {
+//                HTTPSTrustManager.allowAllSSL();
+//            }
 //        }
-
         Map<String, String> headers = request.getHeaders();
 
         for (final String name : headers.keySet()) {
@@ -212,20 +203,4 @@ public class OkHttpStack implements HttpStack {
         return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
     }
 
-
-    private SSLSocketFactory createSSLSocketFactory(Context context, int res, String password)
-            throws CertificateException,
-            NoSuchAlgorithmException,
-            IOException,
-            KeyStoreException,
-            KeyManagementException {
-        InputStream inputStream = context.getResources().openRawResource(res);
-        KeyStore keyStore = KeyStore.getInstance("BKS");
-        keyStore.load(inputStream, password.toCharArray());
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(keyStore);
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, tmf.getTrustManagers(), new SecureRandom());
-        return sslContext.getSocketFactory();
-    }
 }
