@@ -1,6 +1,7 @@
 package com.eascs.app.network.impl;
 
-import com.android.volley.DefaultRetryPolicy;
+
+import com.eascs.app.network.volley.DefaultRetryPolicy;
 
 /**
  * @author KevinHo

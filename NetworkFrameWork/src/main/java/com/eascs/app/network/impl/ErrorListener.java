@@ -1,10 +1,10 @@
 package com.eascs.app.network.impl;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.eascs.app.network.interfaces.HttpConnectionCallBack;
 import com.eascs.app.network.http.HttpRequestModel;
 import com.eascs.app.network.model.action.RequestAction;
+import com.eascs.app.network.volley.Response;
+import com.eascs.app.network.volley.VolleyError;
 
 /**
  * @author KevinHo

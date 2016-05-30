@@ -1,8 +1,8 @@
 package com.eascs.app.network.interfaces.interceptor;
 
-import com.android.volley.VolleyError;
 import com.eascs.app.network.interfaces.Checker;
 import com.eascs.app.network.model.RequestInfo;
+import com.eascs.app.network.volley.VolleyError;
 
 /*** 
  * @version V1.0
@@ -25,5 +25,8 @@ public interface RequestInterceptor<K,T extends VolleyError> extends Checker {
     K returnData();
 
     T returnError(RequestInterceptor requestInterceptor);
+
+    boolean onCallBackPage();
+
 
 }

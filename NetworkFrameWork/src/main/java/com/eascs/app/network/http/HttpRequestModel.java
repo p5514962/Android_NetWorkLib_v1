@@ -48,11 +48,11 @@ public class HttpRequestModel {
         this.requestTag = requestTag;
     }
 
-    public Object getExtrasData() {
+    public Object getTag() {
         return extrasData;
     }
 
-    public void setExtrasData(Object extrasData) {
+    public void setTag(Object extrasData) {
         this.extrasData = extrasData;
     }
 

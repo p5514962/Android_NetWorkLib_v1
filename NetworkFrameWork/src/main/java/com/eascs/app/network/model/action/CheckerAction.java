@@ -16,6 +16,10 @@ public class CheckerAction {
         this(interceptAction,null);
     }
 
+    public CheckerAction(FilterAction filterAction){
+        this(null,filterAction);
+    }
+
 
     public CheckerAction(InterceptAction interceptAction, FilterAction filterAction){
         this.interceptAction = interceptAction;

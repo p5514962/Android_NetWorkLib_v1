@@ -1,9 +1,9 @@
 package com.eascs.app.network.interfaces;
 
 
-import com.android.volley.VolleyError;
 import com.eascs.app.network.model.HeaderModel;
 import com.eascs.app.network.http.HttpRequestModel;
+import com.eascs.app.network.volley.VolleyError;
 
 import org.json.JSONObject;
 

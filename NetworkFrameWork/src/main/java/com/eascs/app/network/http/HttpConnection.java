@@ -1,10 +1,9 @@
 package com.eascs.app.network.http;
 
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.eascs.app.network.control.NetWorkApiControlCenter;
 import com.eascs.app.network.constant.Constant;
 import com.eascs.app.network.impl.ErrorListener;
@@ -20,9 +19,15 @@ import com.eascs.app.network.model.action.RequestAction;
 import com.eascs.app.network.model.exception.InterceptorError;
 import com.eascs.app.network.model.RequestInfo;
 import com.eascs.app.network.untils.LocalUntil;
+import com.eascs.app.network.volley.AuthFailureError;
+import com.eascs.app.network.volley.Request;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /***
@@ -52,6 +57,11 @@ public class HttpConnection implements RequestAction.IRequestAction {
         this(null, httpRequestModel);
     }
 
+    public HttpConnection() {
+        this(null, null);
+    }
+
+
     /**
      * @param callBack
      * @param httpRequestModel
@@ -74,6 +84,16 @@ public class HttpConnection implements RequestAction.IRequestAction {
         return request(requestCode, method, url, params, protocol, Constant.ContentType.CONTENT_TYPE_FORM, null);
     }
 
+    public RequestAction request(int requestCode, int method, String url,
+                                 Map<String, String> params, Constant.REQUEST_TYPE protocol, CheckerAction checkerAction) {
+        return request(requestCode, method, url, params, protocol, Constant.ContentType.CONTENT_TYPE_FORM, checkerAction);
+    }
+
+    public RequestAction request(int requestCode, int method, String url,
+                                 Map<String, String> params, CheckerAction checkerAction) {
+        return request(requestCode, method, url, params, Constant.REQUEST_TYPE.HTTP, Constant.ContentType.CONTENT_TYPE_FORM, checkerAction);
+    }
+
     /*
      *
      * @param context
@@ -85,10 +105,18 @@ public class HttpConnection implements RequestAction.IRequestAction {
      * @param protocol
      * @param contentType
      */
-    public RequestAction request(int requestCode, int method, String url, final Map<String, String> params,
+    public RequestAction request(int requestCode, final int method, String url, final Map<String, String> params,
                                  Constant.REQUEST_TYPE protocol, final String contentType, CheckerAction checkerAction) {
+        if (httpRequestModel == null) {
+            httpRequestModel = new HttpRequestModel(url);
+        } else {
+            if (null == httpRequestModel.getRequestTag()) {
+                httpRequestModel.setRequestTag(url);
+            }
+        }
 
-        Object uniqueTag = (httpRequestModel == null || null == httpRequestModel.getRequestTag()) ? url : httpRequestModel.getRequestTag();
+
+        Object uniqueTag = httpRequestModel.getRequestTag();
 
         RequestAction requestAction = new RequestAction(httpRequestModel.getRequestTag(), this);
 
@@ -132,7 +160,7 @@ public class HttpConnection implements RequestAction.IRequestAction {
         }
 
         //组装请求具体实体且组装头部
-        JsonObjectCommonRequest request = new JsonObjectCommonRequest(method,url, mResponseListener, mErrorListener){
+        JsonObjectCommonRequest request = new JsonObjectCommonRequest(method, url, mResponseListener, mErrorListener) {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 IHeaderBuilder mIHeaderBuilder = NetWorkApiControlCenter.instance.getNetWorkApiBuilder().getHeaderBuilder();
@@ -147,6 +175,28 @@ public class HttpConnection implements RequestAction.IRequestAction {
                 return params;
             }
         };
+//        JsonObjectRequest request = new JsonObjectRequest(method, url, paramJson, mResponseListener, mErrorListener) {
+//            @Override
+//            public Map<String, String> getHeaders() throws AuthFailureError {
+//                IHeaderBuilder mIHeaderBuilder = NetWorkApiControlCenter.instance.getNetWorkApiBuilder().getHeaderBuilder();
+//                if (null != mIHeaderBuilder) {
+//                    return mIHeaderBuilder.getHeaders(contentType, params);
+//                }
+//                return super.getHeaders();
+//            }
+//
+//            @Override
+//            protected Map<String, String> getParams() throws AuthFailureError {
+//                return params;
+//            }
+//
+//            @Override
+//            public String getBodyContentType() {
+//                String temp = "application/x-www-form-urlencoded; charset=" + getParamsEncoding();
+//                return (method == Request.Method.POST) ? temp : super.getBodyContentType();
+//            }
+//        };
+
 //        JsonObjectRequest request = new JsonObjectRequest(method, url, paramJson, mResponseListener, mErrorListener) {
 //            @Override
 //            protected Map<String, String> getParams() throws AuthFailureError {
@@ -201,22 +251,41 @@ public class HttpConnection implements RequestAction.IRequestAction {
     //==============辅助方法================//
     private boolean buildCheckerCase(CheckerAction checkerAction, ResponseListener mResponseListener, RequestInfo requestInfo, RequestInterceptor[] defaultInterceptors) {
         RequestInterceptor[] targetInterceptors = defaultInterceptors;//默认拦截器
+        //2.过滤自定义放行拦截器
+        List<Integer> list = new LinkedList<>();
 
         if (null != checkerAction) {
             InterceptAction interceptAction = checkerAction.getInterceptAction();
-            mResponseListener.setFilterAction(checkerAction.getFilterAction());
-            if (null != interceptAction && null != interceptAction.getInterceptors()) {//添加自定义拦截
-                targetInterceptors = LocalUntil.instance.concat(defaultInterceptors, interceptAction.getInterceptors());
+            mResponseListener.setFilterAction(checkerAction.getFilterAction());//设置放行目标过滤器
+            if (null != interceptAction && null != interceptAction.getCustomInterceptors()) {//添加自定义拦截
+                //1.先合并默认和自定义拦截器
+                targetInterceptors = LocalUntil.instance.concat(defaultInterceptors, interceptAction.getCustomInterceptors());
+
+                for(RequestInterceptor mPassInterceptors:checkerAction.getInterceptAction().getPassInterceptors()){
+                    list.add(mPassInterceptors.uniqueKey());
+                }
             }
         }
-        if (null != targetInterceptors) {//开始拦截
-            for (RequestInterceptor mRequestInterceptor : targetInterceptors) {
-                if (mRequestInterceptor.onIntercept(requestInfo, mRequestInterceptor.returnData())) {
-//                    callBack.onFailure(new InterceptorError(mRequestInterceptor), httpRequestModel);
-                    callBack.onFailure(mRequestInterceptor.returnError(mRequestInterceptor), httpRequestModel);
+
+        for (RequestInterceptor mTargetInterceptors : targetInterceptors) {
+            if(list.contains(mTargetInterceptors.uniqueKey())) {
+                continue;
+            }else{//仅过滤非放行拦截器
+                if(!onIntercept(requestInfo, mTargetInterceptors)){
                     return false;
                 }
             }
+        }
+
+        return true;
+    }
+
+    private boolean onIntercept(RequestInfo requestInfo, RequestInterceptor mDefaultInterceptor) {
+        if (mDefaultInterceptor.onIntercept(requestInfo, mDefaultInterceptor.returnData())) {
+            if (mDefaultInterceptor.onCallBackPage() && null != callBack) {
+                callBack.onFailure(mDefaultInterceptor.returnError(mDefaultInterceptor), httpRequestModel);
+            }
+            return false;
         }
         return true;
     }
@@ -226,7 +295,6 @@ public class HttpConnection implements RequestAction.IRequestAction {
      */
     public void cancelCurrentRequest(Object tag) {
         if (httpRequestModel != null) {
-            Log.e("HttpConnection ", "___________________________request" + httpRequestModel.getExtrasData().toString());
             // 请求之前先取消请求
             netWorkApiControlCenter.getRequestQueueManager().cancel(null == tag ? (httpRequestModel.getRequestTag()) : tag);
         }

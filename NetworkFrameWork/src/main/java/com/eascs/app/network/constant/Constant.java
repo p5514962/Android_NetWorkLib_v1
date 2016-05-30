@@ -1,6 +1,7 @@
 package com.eascs.app.network.constant;
 
-import com.android.volley.DefaultRetryPolicy;
+
+import com.eascs.app.network.volley.DefaultRetryPolicy;
 
 /***
  * @version V1.0

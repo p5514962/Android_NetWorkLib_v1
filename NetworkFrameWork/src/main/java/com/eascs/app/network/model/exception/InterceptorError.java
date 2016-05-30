@@ -1,7 +1,7 @@
 package com.eascs.app.network.model.exception;
 
-import com.android.volley.VolleyError;
 import com.eascs.app.network.interfaces.interceptor.RequestInterceptor;
+import com.eascs.app.network.volley.VolleyError;
 
 /**
  * Created by KevinHo on 2016/5/9 0009.

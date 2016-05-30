@@ -2,9 +2,9 @@ package com.eascs.app.network.http;
 
 import android.content.Context;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.Volley;
+import com.eascs.app.network.volley.Request;
+import com.eascs.app.network.volley.RequestQueue;
+import com.eascs.app.network.volley.toolbox.Volley;
 
 /**
  * Created by KevinHo on 2016/2/29.

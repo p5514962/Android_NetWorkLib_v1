@@ -3,34 +3,46 @@ package com.eascs.app.network.model.action;
 import com.eascs.app.network.interfaces.interceptor.RequestInterceptor;
 
 /***
- * @version V1.0
  * @author KevinHo
+ * @version V1.0
  * @desc 拦截器中心
  * @time 2016/5/10 0010 10:06
  * @reference
  */
 public class InterceptAction {
 
-    private RequestInterceptor[] interceptors;
+    private RequestInterceptor[] customInterceptors = new RequestInterceptor[]{};
 
-    private boolean ignoreDefault = false;
+    private RequestInterceptor[] passInterceptors = new RequestInterceptor[]{};
 
-    public InterceptAction(RequestInterceptor[] interceptors) {
-        this.interceptors = interceptors;
+//    private boolean ignoreDefault = false;
+
+    public InterceptAction(RequestInterceptor[] customInterceptors, RequestInterceptor[] passInterceptors) {
+        if(null != customInterceptors){
+            this.customInterceptors = customInterceptors;
+        }
+        if(null != passInterceptors){
+            this.passInterceptors = passInterceptors;
+        }
     }
 
-    public InterceptAction(RequestInterceptor[] interceptors, boolean ignoreDefault) {
-        this.interceptors = interceptors;
-        this.ignoreDefault = ignoreDefault;
+//    public InterceptAction(RequestInterceptor[] interceptors, boolean ignoreDefault) {
+//        this.interceptors = interceptors;
+//        this.ignoreDefault = ignoreDefault;
+//    }
+
+    public RequestInterceptor[] getCustomInterceptors() {
+        return customInterceptors;
     }
 
-    public RequestInterceptor[] getInterceptors() {
-        return interceptors;
+    public RequestInterceptor[] getPassInterceptors() {
+        return passInterceptors;
     }
 
-    public boolean isIgnoreDefault() {
-        return ignoreDefault;
-    }
+
+//    public boolean isIgnoreDefault() {
+//        return ignoreDefault;
+//    }
 
 
 }

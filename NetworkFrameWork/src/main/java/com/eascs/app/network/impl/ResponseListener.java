@@ -1,10 +1,6 @@
 package com.eascs.app.network.impl;
 
 import android.text.TextUtils;
-
-import com.android.volley.ParseError;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.eascs.app.network.control.NetWorkApiControlCenter;
 import com.eascs.app.network.constant.Constant;
 import com.eascs.app.network.model.action.FilterAction;
@@ -15,6 +11,9 @@ import com.eascs.app.network.interfaces.filter.ResponseFilter;
 import com.eascs.app.network.model.ResponseInfo;
 import com.eascs.app.network.model.action.RequestAction;
 import com.eascs.app.network.model.exception.FilterError;
+import com.eascs.app.network.volley.ParseError;
+import com.eascs.app.network.volley.Response;
+import com.eascs.app.network.volley.VolleyError;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,19 +76,24 @@ public class ResponseListener implements Response.Listener<JSONObject> {
                 if (null != defaultResponseFilter && defaultResponseFilter.onFilter(responseInfo)) {
                     if (null != filterAction) {//放行具体业务拦截器
                         for (ResponseFilter targetFilterAction : filterAction.getResponseFilter()) {
-                            if (targetFilterAction.uniqueKey() == defaultResponseFilter.uniqueKey()) {
+                            if (targetFilterAction.uniqueKey() == defaultResponseFilter.uniqueKey()) {//确保是头部过滤器
                                 if(TextUtils.equals(targetFilterAction.getStopReasonKey(),defaultResponseFilter.getStopReasonKey())){
                                     buildSuccessCase(headerModel, jsonObject);//回调具体页面,携带感兴趣数据
                                     return;
                                 }
+                            }else{
+                                //TODO
                             }
-                        }
-//                        httpConnectionCallBack.onFailure(new FilterError(defaultResponseFilter), httpRequestModel);
-                          return;//放行业务拦截器与默认拦截器不匹配，直接返回
-                    } else {//默认拦截器起效后，直接返回，不回调具体页面
-//                        httpConnectionCallBack.onFailure(new VolleyError(), httpRequestModel);
+                        }//反正只要属于统一错误码的都onFailure
+                        httpConnectionCallBack.onFailure(new FilterError(defaultResponseFilter), httpRequestModel);
+                        return;//放行业务拦截器与默认拦截器不匹配，直接返回
+                    } else {//反正只要属于统一错误码的都onFailure
+                        httpConnectionCallBack.onFailure(new FilterError(defaultResponseFilter), httpRequestModel);
                         return;
                     }
+                }else{
+                    buildSuccessCase(headerModel, jsonObject);//
+                    return;
                 }
             }
             buildSuccessCase(headerModel, jsonObject);//第三部获取消息体且回调

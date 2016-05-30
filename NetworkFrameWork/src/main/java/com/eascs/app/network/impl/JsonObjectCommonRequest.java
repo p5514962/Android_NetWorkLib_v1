@@ -1,9 +1,11 @@
 package com.eascs.app.network.impl;
-import com.android.volley.NetworkResponse;
-import com.android.volley.ParseError;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.toolbox.HttpHeaderParser;
+import android.util.Log;
+
+import com.eascs.app.network.volley.NetworkResponse;
+import com.eascs.app.network.volley.ParseError;
+import com.eascs.app.network.volley.Request;
+import com.eascs.app.network.volley.Response;
+import com.eascs.app.network.volley.toolbox.HttpHeaderParser;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
@@ -44,7 +46,10 @@ public class JsonObjectCommonRequest extends Request<JSONObject> {
 
     @Override
     protected void deliverResponse(JSONObject response) {
-        // TODO Auto-generated method stub
+        if(null == listener){
+            Log.w("network warning","Response.Listener is null");
+            return;
+        }
         listener.onResponse(response);
     }
 

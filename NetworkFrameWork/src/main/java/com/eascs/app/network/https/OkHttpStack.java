@@ -1,10 +1,11 @@
 package com.eascs.app.network.https;
 
 import android.app.Activity;
+import android.text.TextUtils;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
-import com.android.volley.toolbox.HttpStack;
+import com.eascs.app.network.volley.AuthFailureError;
+import com.eascs.app.network.volley.Request;
+import com.eascs.app.network.volley.toolbox.HttpStack;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -16,11 +17,16 @@ import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+
 import okhttp3.Call;
+import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -31,16 +37,12 @@ import okhttp3.ResponseBody;
 
 
 public class OkHttpStack implements HttpStack {
-    private final OkHttpClient mClient;
+    private OkHttpClient mClient = null;
     public boolean isRelease;
+    private BksInfo mBksInfo;
 
-    public OkHttpStack(OkHttpClient client) {
-        this.mClient = client;
-    }
-
-    public OkHttpStack(OkHttpClient mClient, boolean isRelease) {
-        this.mClient = mClient;
-        this.isRelease = isRelease;
+    public OkHttpStack(BksInfo mBksInfo) {
+        this.mBksInfo = mBksInfo;
     }
 
     public void setRelease(boolean release) {
@@ -50,24 +52,28 @@ public class OkHttpStack implements HttpStack {
     @Override
     public HttpResponse performRequest(Request<?> request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError {
-
+        OkHttpClient client = null;
         int timeoutMs = request.getTimeoutMs();
         int retryCount = request.getRetryPolicy().getCurrentRetryCount();
-        OkHttpClient client = mClient;
         client = new OkHttpClient.Builder()
                 .connectTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                 .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                 .writeTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                .retryOnConnectionFailure(false)
+                .hostnameVerifier(new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String hostname, SSLSession session) {
+                        return true;
+                    }
+                })
                 .sslSocketFactory(HttpsUtils.getSslSocketFactory(
-                        null,
-                        new Activity().getAssets().open("starline2.bks"),
-                        "123@eascs.com"
-                ))
-                .build();
+                        null, mBksInfo.getInputStream(),
+                        mBksInfo.getBksPwd()
+                )).build();
 
         okhttp3.Request.Builder okHttpRequestBuilder = new okhttp3.Request.Builder();
         URL parsedUrl = new URL(request.getUrl());
-        String protocol = parsedUrl.getProtocol();
+//        String protocol = parsedUrl.getProtocol();
 //        if (!isRelease) {
 //            if ("https".equals(protocol)) {
 //                HTTPSTrustManager.allowAllSSL();
@@ -76,11 +82,15 @@ public class OkHttpStack implements HttpStack {
         Map<String, String> headers = request.getHeaders();
 
         for (final String name : headers.keySet()) {
-            okHttpRequestBuilder.addHeader(name, headers.get(name));
+            if (!TextUtils.isEmpty(name) && !TextUtils.isEmpty(headers.get(name))) {
+                okHttpRequestBuilder.addHeader(name, headers.get(name));
+            }
         }
 
         for (final String name : additionalHeaders.keySet()) {
-            okHttpRequestBuilder.addHeader(name, additionalHeaders.get(name));
+            if (!TextUtils.isEmpty(name) && !TextUtils.isEmpty(additionalHeaders.get(name))) {
+                okHttpRequestBuilder.addHeader(name, additionalHeaders.get(name));
+            }
         }
 
         setConnectionParametersForRequest(okHttpRequestBuilder, request);
@@ -198,9 +208,12 @@ public class OkHttpStack implements HttpStack {
 
     private static RequestBody createRequestBody(Request request) throws AuthFailureError {
         final byte[] body = request.getBody();
-        if (body == null) return null;
-
-        return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
+        if(body == null) {
+            FormBody formBody = (new okhttp3.FormBody.Builder()).build();
+            return formBody;
+        } else {
+            return RequestBody.create(MediaType.parse(request.getBodyContentType()), body);
+        }
     }
 
 }
