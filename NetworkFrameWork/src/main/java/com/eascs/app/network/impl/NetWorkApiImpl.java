@@ -10,6 +10,8 @@ import com.eascs.app.network.interfaces.INetWorkAPI;
 import com.eascs.app.network.interfaces.builder.IUrlBuilder;
 import com.eascs.app.network.interfaces.filter.ResponseFilter;
 import com.eascs.app.network.interfaces.interceptor.RequestInterceptor;
+import com.eascs.app.network.volley.DefaultRetryPolicy;
+import com.eascs.app.network.volley.RetryPolicy;
 
 
 /*** 
@@ -79,6 +81,12 @@ public class NetWorkApiImpl implements INetWorkAPI{
         return this;
     }
 
+    @Override
+    public INetWorkAPI setDefaultRetryPolicy(RetryPolicy defaultRetryPolicy) {
+        NetWorkApiControlCenter.instance.setRetryPolicy(defaultRetryPolicy);
+        return this;
+    }
+
     /**
      * 初始化默认Builder
      */
@@ -90,6 +98,26 @@ public class NetWorkApiImpl implements INetWorkAPI{
      */
     private void initInterceptor(){
        //无初始化拦截器
+    }
+
+    @Override
+    public NetWorkApiBuilder getNetWorkApiBuilder() {
+        return netWorkApiBuilder;
+    }
+
+    @Override
+    public NetWorkApiChecker getNetWorkApiChecker() {
+        return netWorkApiChecker;
+    }
+
+    @Override
+    public RequestQueueManager getRequestQueueManager() {
+        return requestQueueManager;
+    }
+
+    @Override
+    public RetryPolicy getDefaultRetryPolicy() {
+        return NetWorkApiControlCenter.instance.getDefaultRetryPolicy();
     }
 
 }

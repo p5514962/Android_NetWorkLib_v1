@@ -29,14 +29,17 @@ public class HttpsUtils
             TrustManager[] trustManagers = prepareTrustManager(certificates);
             KeyManager[] keyManagers = prepareKeyManager(bksFile, password);
             SSLContext sslContext = SSLContext.getInstance("TLS");
+
             TrustManager trustManager = null;
-            if (trustManagers != null)
-            {
-                trustManager = new MyTrustManager(chooseTrustManager(trustManagers));
-            } else
-            {
-                trustManager = new UnSafeTrustManager();
-            }
+
+//            if (trustManagers != null)
+//            {
+//                trustManager = new MyTrustManager(chooseTrustManager(trustManagers));
+//            } else
+//            {
+//                trustManager = new UnSafeTrustManager();
+//            }
+            trustManager = new HTTPSTrustManager();
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, new SecureRandom());
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException e)
@@ -45,10 +48,11 @@ public class HttpsUtils
         } catch (KeyManagementException e)
         {
             throw new AssertionError(e);
-        } catch (KeyStoreException e)
-        {
-            throw new AssertionError(e);
         }
+//        catch (KeyStoreException e)
+//        {
+//            throw new AssertionError(e);
+//        }
     }
 
     private static class UnSafeTrustManager implements X509TrustManager

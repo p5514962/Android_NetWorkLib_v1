@@ -1,6 +1,9 @@
 package com.eascs.app.network.control;
 
 import com.eascs.app.network.http.RequestQueueManager;
+import com.eascs.app.network.impl.ApiRetryPolicy;
+import com.eascs.app.network.volley.DefaultRetryPolicy;
+import com.eascs.app.network.volley.RetryPolicy;
 
 /***
  * @version V1.0
@@ -13,10 +16,13 @@ public enum NetWorkApiControlCenter {
 
     instance;
 
+    private RetryPolicy retryPolicy;
+
     NetWorkApiControlCenter(){
         netWorkApiBuilder = new NetWorkApiBuilder();
         netWorkApiChecker = new NetWorkApiChecker();
         requestQueueManager = new RequestQueueManager();
+        retryPolicy = new ApiRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, 0, 0);
     }
 
     private NetWorkApiBuilder netWorkApiBuilder;//组装器
@@ -36,5 +42,14 @@ public enum NetWorkApiControlCenter {
     public RequestQueueManager getRequestQueueManager() {
         return requestQueueManager;
     }
+
+    public RetryPolicy getDefaultRetryPolicy() {
+        return retryPolicy;
+    }
+
+    public void setRetryPolicy(RetryPolicy retryPolicy) {
+        this.retryPolicy = retryPolicy;
+    }
+
 
 }

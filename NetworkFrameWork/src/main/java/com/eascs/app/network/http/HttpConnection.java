@@ -21,6 +21,7 @@ import com.eascs.app.network.model.RequestInfo;
 import com.eascs.app.network.untils.LocalUntil;
 import com.eascs.app.network.volley.AuthFailureError;
 import com.eascs.app.network.volley.Request;
+import com.eascs.app.network.volley.RetryPolicy;
 
 import org.json.JSONObject;
 
@@ -240,7 +241,11 @@ public class HttpConnection implements RequestAction.IRequestAction {
 //        });
 
         //设置重试，超时策略
-        request.setRetryPolicy(httpRequestModel.getRetryPolicy());
+
+        RetryPolicy retryPolicy = (null != httpRequestModel.getRetryPolicy())
+                ? httpRequestModel.getRetryPolicy() : NetWorkApiControlCenter.instance.getDefaultRetryPolicy();
+
+        request.setRetryPolicy(retryPolicy);
 
         //启动请求,tag 表示按照Request.setTag设置好的 tag 取消请求，比如同属于某个 Activity
         netWorkApiControlCenter.getRequestQueueManager().addRequest(request, uniqueTag);
@@ -261,17 +266,17 @@ public class HttpConnection implements RequestAction.IRequestAction {
                 //1.先合并默认和自定义拦截器
                 targetInterceptors = LocalUntil.instance.concat(defaultInterceptors, interceptAction.getCustomInterceptors());
 
-                for(RequestInterceptor mPassInterceptors:checkerAction.getInterceptAction().getPassInterceptors()){
-                    list.add(mPassInterceptors.uniqueKey());
+                for (RequestInterceptor mPassInterceptors : interceptAction.getPassInterceptors()) {
+                    list.add(mPassInterceptors.uniqueKey());//存储临时需要放行拦截器
                 }
             }
         }
 
         for (RequestInterceptor mTargetInterceptors : targetInterceptors) {
-            if(list.contains(mTargetInterceptors.uniqueKey())) {
-                continue;
-            }else{//仅过滤非放行拦截器
-                if(!onIntercept(requestInfo, mTargetInterceptors)){
+            if (list.contains(mTargetInterceptors.uniqueKey())) {
+                continue;//过滤放行拦截器
+            } else {//仅启动非放行拦截器
+                if (!onIntercept(requestInfo, mTargetInterceptors)) {
                     return false;
                 }
             }
@@ -280,10 +285,18 @@ public class HttpConnection implements RequestAction.IRequestAction {
         return true;
     }
 
-    private boolean onIntercept(RequestInfo requestInfo, RequestInterceptor mDefaultInterceptor) {
-        if (mDefaultInterceptor.onIntercept(requestInfo, mDefaultInterceptor.returnData())) {
-            if (mDefaultInterceptor.onCallBackPage() && null != callBack) {
-                callBack.onFailure(mDefaultInterceptor.returnError(mDefaultInterceptor), httpRequestModel);
+    /**
+     * 检查所有拦截器(默认+自定义过滤器)
+     *
+     * @param requestInfo
+     * @param mTargetInterceptors
+     * @return
+     */
+    private boolean onIntercept(RequestInfo requestInfo, RequestInterceptor mTargetInterceptors) {
+        if (mTargetInterceptors.onIntercept(requestInfo, mTargetInterceptors.returnData())) {
+            mTargetInterceptors.setData(null);//保证每次使用data model 完毕情况，供下次请求使用
+            if (mTargetInterceptors.onCallBackPage() && null != callBack) {
+                callBack.onFailure(mTargetInterceptors.returnError(mTargetInterceptors), httpRequestModel);
             }
             return false;
         }

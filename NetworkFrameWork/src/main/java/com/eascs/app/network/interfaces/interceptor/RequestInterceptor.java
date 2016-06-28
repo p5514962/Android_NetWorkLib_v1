@@ -24,6 +24,9 @@ public interface RequestInterceptor<K,T extends VolleyError> extends Checker {
      */
     K returnData();
 
+    void setData(K k);
+
+
     T returnError(RequestInterceptor requestInterceptor);
 
     boolean onCallBackPage();

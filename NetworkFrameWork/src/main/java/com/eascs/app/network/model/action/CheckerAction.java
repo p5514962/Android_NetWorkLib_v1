@@ -20,7 +20,6 @@ public class CheckerAction {
         this(null,filterAction);
     }
 
-
     public CheckerAction(InterceptAction interceptAction, FilterAction filterAction){
         this.interceptAction = interceptAction;
         this.filterAction = filterAction;
